@@ -62,6 +62,21 @@ module MailerTags
     end
   end
 
+  desc %{
+    Displays the error message on the specified field, if there is one,
+    or the current error message (if you're inside an if_error block)
+    
+    <pre><code>
+      <r:mailer:error on="name" />
+      <r:mailer:if_error on="name" />Oh no! <r:mailer:error /></r:mailer:if_error>
+    </code></pre>
+  }
+  tag "mailer:error" do |tag|
+    if mail = tag.locals.page.last_mail
+      tag.attr['on'] ? mail.errors[tag.attr['on']] : tag.locals.error_message
+    end
+  end
+
   desc %{Outputs the error message.}
   tag "mailer:if_error:message" do |tag|
     tag.locals.error_message
@@ -93,10 +108,24 @@ module MailerTags
       Renders a #{type} input tag for a mailer form. The 'name' attribute is required.}
     tag "mailer:#{type}" do |tag|
       raise_error_if_name_missing "mailer:#{type}", tag.attr
-      value = (prior_value(tag) || tag.attr['value'])
-      result = [%(<input type="#{type}" value="#{value}" #{mailer_attrs(tag)} />)]
+      result = setup_field(type, tag)
       add_required(result, tag)
     end
+  end
+    
+  def setup_field(type, tag)
+    if tag.attr['trapped']
+      tag.attr['real_name'] = tag.attr['name']
+      tag.attr['name'] = generate_random_name
+    end
+    value = (prior_value(tag) || tag.attr['value'])
+    result = [%(<input type="#{type}" value="#{value}" #{mailer_attrs(tag)} />)]
+    if tag.attr['trapped']
+      result << %{<input type="#{type}" style="display: block" value="" id="#{tag.attr['real_name']}" name="mailer[#{tag.attr['real_name']}]" />}
+      result << %{<input type="hidden" name="mailer[untrap][#{tag.attr['real_name']}]" value="#{tag.attr['name']}" />}
+      tag.attr['name'] = tag.attr['real_name']    # so that the required field has the real not the fake field name (requirement validation happens after we've translated the field names back)
+    end
+    result
   end
 
   desc %{
@@ -149,6 +178,10 @@ module MailerTags
     elsif tag.locals.parent_tag_type == 'radiogroup'
       %(<input type="radio" value="#{value}"#{%( checked="checked") if selected} #{mailer_attrs(tag)} />)
     end
+  end
+  
+  tag 'mailer:inspect' do |tag|
+    tag.locals.page.last_mail.inspect
   end
   
   desc %{
@@ -276,7 +309,7 @@ module MailerTags
 
   def prior_value(tag, tag_name=tag.attr['name'])
     if mail = tag.locals.page.last_mail
-      mail.data[tag_name]
+      mail.data[tag_name] || mail.data[tag.attr['real_name']]
     else
       nil
     end
@@ -299,6 +332,11 @@ module MailerTags
   def add_required(result, tag)
     result << %(<input type="hidden" name="mailer[required][#{tag.attr['name']}]" value="#{tag.attr['required']}" />) if tag.attr['required']
     result
+  end
+  
+  def generate_random_name(length=16)
+    chars = ("a".."z").to_a + ("A".."Z").to_a + ("1".."9").to_a
+    Array.new(length, '').collect{chars[rand(chars.size)]}.join
   end
 
   def raise_error_if_name_missing(tag_name, tag_attr)

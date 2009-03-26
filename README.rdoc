@@ -2,6 +2,19 @@
 
 The Mailer extension enables form mail on a page.
 
+== (Forked)
+
+This version adds support for a 'trapped' parameter to text and other form fields. If present, the field is turned into an inverse captcha. It works like this:
+
+* The field name is replaced with a random string.
+* A hidden field (since we can't get at the session) records the mapping from random string to field name
+* A dummy field is added to the form with the real field name, and hidden with css
+* If anything is entered into the dummy field, we invalidate the form (with an error on eg 'email_trap')
+* Before the rest of the validations, the real field names are restored
+
+This is sometimes called an inverse captcha. It works surprisingly well at screening out form bots. All you need to put in your form is this:
+
+  <r:mailer:text name="email" required="true" trapped="true" />
 
 == Usage
 

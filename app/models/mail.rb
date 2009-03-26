@@ -1,8 +1,10 @@
 class Mail
-  attr_reader :page, :config, :data, :errors
+  attr_reader :page, :config, :data, :errors, :traps
   def initialize(page, config, data)
     @page, @config, @data = page, config.with_indifferent_access, data
+    STDERR.puts ">>> data: #{@data.inspect}"
     @required = @data.delete(:required)
+    @traps = @data.delete(:untrap) || []
     @errors = {}
   end
 
@@ -15,6 +17,16 @@ class Mail
   def valid?
     unless defined?(@valid)
       @valid = true
+
+      traps.each do |trapname, realname|
+        if data[trapname].blank?
+          data[trapname] = data[realname].delete
+        else
+          errors["#{trapname}_trap"] = "Please do not fill in this field again"
+          @valid = false
+        end
+      end
+
       if recipients.blank? and !is_required_field?(config[:recipients_field])
         errors['form'] = 'Recipients are required.'
         @valid = false
@@ -38,6 +50,9 @@ class Mail
       if @required
         @required.each do |name, msg|
           if data[name].blank?
+            
+            STDERR.puts "!!! #{name} is missing"
+            
             errors[name] = ((msg.blank? || %w(1 true required).include?(msg)) ? "is required." : msg)
             @valid = false
           end
