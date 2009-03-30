@@ -17,7 +17,7 @@ describe "MailerProcess" do
 end
 
 describe SiteController, "receiving a mailer request", :type => :controller do
-  dataset :mailer
+  dataset :mailer_pages
 
   before :each do
     ResponseCache.instance.clear

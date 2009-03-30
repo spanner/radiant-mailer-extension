@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
 describe "MailerTags" do
-  dataset :mailer
+  dataset :mailer_pages
   describe "<r:mailer>" do
     it "should render an error if the configuration is invalid" do
        pages(:home).should render("<r:mailer>true</r:mailer>").as('Mailer config is not valid (see Mailer.valid_config?)')
@@ -141,6 +141,14 @@ describe "MailerTags" do
 
       it "should raise an error if the name attribute is not specified" do
         pages(:mail_form).should render("<r:mailer:#{type} />").with_error("`mailer:#{type}' tag requires a `name' attribute")
+      end
+      
+      it "should include a gibberish field and hidden untrap-mapping field when the 'trapped' attribute is specified" do
+        pages(:mail_form).should render("<r:mailer:#{type} name='foo' trapped='true' trap_name='testing' />").as(%Q{<input type="#{type}" value="" id="testing" name="mailer[testing]" /><input type="#{type}" style="display: none" value="" id="foo" name="mailer[foo]" /><input type="hidden" name="mailer[untrap][foo]" value="testing" />})
+      end
+
+      it "should include a gibberish field and untrap and required hidden fields when both the 'trapped' and 'required' attributes are specified" do
+        pages(:mail_form).should render("<r:mailer:#{type} name='foo' required='true' trapped='true' trap_name='testing' />").as(%Q{<input type="#{type}" value="" id="testing" name="mailer[testing]" /><input type="#{type}" style="display: none" value="" id="foo" name="mailer[foo]" /><input type="hidden" name="mailer[untrap][foo]" value="testing" /><input type="hidden" name="mailer[required][foo]" value="true" />})
       end
     end
   end

@@ -105,27 +105,23 @@ module MailerTags
 
   %w(text checkbox radio hidden).each do |type|
     desc %{
-      Renders a #{type} input tag for a mailer form. The 'name' attribute is required.}
+      Renders a #{type} input tag for a mailer form. The 'name' attribute is required. 'required' and 'trapped' attributes can be set. Other attributes are passed through to the input tag.s}
     tag "mailer:#{type}" do |tag|
       raise_error_if_name_missing "mailer:#{type}", tag.attr
-      result = setup_field(type, tag)
-      add_required(result, tag)
+      results = []
+      value = (prior_value(tag) || tag.attr['value'])
+      if tag.attr['trapped']
+        tag.attr['real_name'] = tag.attr['name']
+        tag.attr['name'] = tag.attr['trap_name'] || prior_field_name(tag) || generate_random_name
+      end
+      results << [%(<input type="#{type}" value="#{value}" #{mailer_attrs(tag)} />)]
+      if tag.attr['trapped']
+        results << %{<input type="#{type}" style="display: none" value="" id="#{tag.attr['real_name']}" name="mailer[#{tag.attr['real_name']}]" />}
+        results << %{<input type="hidden" name="mailer[untrap][#{tag.attr['real_name']}]" value="#{tag.attr['name']}" />}
+        tag.attr['name'] = tag.attr['real_name']    # so that the required field, if any, has the real not the fake field name (requirement validation happens after we've translated the field names back)
+      end
+      add_required(results, tag)
     end
-  end
-    
-  def setup_field(type, tag)
-    if tag.attr['trapped']
-      tag.attr['real_name'] = tag.attr['name']
-      tag.attr['name'] = generate_random_name
-    end
-    value = (prior_value(tag) || tag.attr['value'])
-    result = [%(<input type="#{type}" value="#{value}" #{mailer_attrs(tag)} />)]
-    if tag.attr['trapped']
-      result << %{<input type="#{type}" style="display: block" value="" id="#{tag.attr['real_name']}" name="mailer[#{tag.attr['real_name']}]" />}
-      result << %{<input type="hidden" name="mailer[untrap][#{tag.attr['real_name']}]" value="#{tag.attr['name']}" />}
-      tag.attr['name'] = tag.attr['real_name']    # so that the required field has the real not the fake field name (requirement validation happens after we've translated the field names back)
-    end
-    result
   end
 
   desc %{
@@ -309,7 +305,15 @@ module MailerTags
 
   def prior_value(tag, tag_name=tag.attr['name'])
     if mail = tag.locals.page.last_mail
-      mail.data[tag_name] || mail.data[tag.attr['real_name']]
+      mail.data[tag_name]
+    else
+      nil
+    end
+  end
+
+  def prior_fieldname(tag, tag_name=tag.attr['name'])
+    if mail = tag.locals.page.last_mail
+      mail.traps[tag_name]
     else
       nil
     end

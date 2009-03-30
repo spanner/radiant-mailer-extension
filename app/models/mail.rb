@@ -2,7 +2,6 @@ class Mail
   attr_reader :page, :config, :data, :errors, :traps
   def initialize(page, config, data)
     @page, @config, @data = page, config.with_indifferent_access, data
-    STDERR.puts ">>> data: #{@data.inspect}"
     @required = @data.delete(:required)
     @traps = @data.delete(:untrap) || []
     @errors = {}
@@ -20,7 +19,7 @@ class Mail
 
       traps.each do |trapname, realname|
         if data[trapname].blank?
-          data[trapname] = data[realname].delete
+          data[trapname] = data.delete(realname)
         else
           errors["#{trapname}_trap"] = "Please do not fill in this field again"
           @valid = false
@@ -50,9 +49,6 @@ class Mail
       if @required
         @required.each do |name, msg|
           if data[name].blank?
-            
-            STDERR.puts "!!! #{name} is missing"
-            
             errors[name] = ((msg.blank? || %w(1 true required).include?(msg)) ? "is required." : msg)
             @valid = false
           end

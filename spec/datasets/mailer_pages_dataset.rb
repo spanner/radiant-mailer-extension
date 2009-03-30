@@ -1,4 +1,4 @@
-class MailerDataset < Dataset::Base
+class MailerPagesDataset < Dataset::Base
   uses :pages
 
   def load

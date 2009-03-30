@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
 describe Mail do
-  dataset :mailer
+  dataset :mailer_pages
 
   before :each do
     @page = pages(:mail_form)
@@ -90,13 +90,19 @@ describe Mail do
     @mail.config[:cc] = "sean@radiant.com"
     @mail.cc.should == "sean@radiant.com"
   end
-  
+    
   it "should return a blank cc when not in the data or configuration" do
     @mail.cc.should be_blank
   end
   
   it "should initially have no errors" do
     @mail.errors.should == {}
+  end
+
+  it "should reassign a concealed input" do
+    @mail = Mail.new(@page, {:recipients => ['foo@bar.com'], :from => 'foo@baz.com'}, {:untrap => {'first_name' => 'gibberish'}, 'gibberish' => 'Name', 'first_name' => ""})
+    @mail.should be_valid   # validation triggers the field reassignment
+    @mail.data['first_name'].should == "Name"
   end
 
   it "should be valid when the configuration and fields are correct" do
@@ -131,6 +137,23 @@ describe Mail do
     @mail = Mail.new(@page, {:recipients => ['foo@bar.com'], :from => 'foo@baz.com'}, {:required => {'first_name' => 'true'}})
     @mail.should_not be_valid
     @mail.errors['first_name'].should_not be_blank
+  end
+  
+  it "should be invalid when a trap field is filled in" do
+    @mail = Mail.new(@page, {:recipients => ['foo@bar.com'], :from => 'foo@baz.com'}, {:required => {'first_name' => 'true'}, :untrap => {'first_name' => 'gibberish'}, 'gibberish' => "Anything", 'first_name' => "Name"})
+    @mail.should_not be_valid
+    @mail.errors['first_name_trap'].should_not be_blank
+  end
+  
+  it "should be invalid when a concealed required field is missing" do
+    @mail = Mail.new(@page, {:recipients => ['foo@bar.com'], :from => 'foo@baz.com'}, {:required => {'first_name' => 'true'}, :untrap => {'first_name' => 'gibberish'}, 'gibberish' => "", 'first_name' => ""})
+    @mail.should_not be_valid
+    @mail.errors['first_name'].should_not be_blank
+  end
+
+  it "should be valid when a concealed required field is filled in" do
+    @mail = Mail.new(@page, {:recipients => ['foo@bar.com'], :from => 'foo@baz.com'}, {:required => {'first_name' => 'true'}, :untrap => {'first_name' => 'gibberish'}, 'gibberish' => "Name", 'first_name' => ""})
+    @mail.should be_valid
   end
 
   it "should not send the mail if invalid" do
@@ -201,7 +224,7 @@ describe Mail do
       @page.last_mail = @mail = Mail.new(@page, {:recipients => ['foo@bar.com'], :from => 'foo@baz.com'}, {'body' => 'Hello, world!'})
     end
 
-    it "should send an email with the rendered plain body" do
+    it "should send an email with the rendered html body" do
       Mailer.should_receive(:deliver_generic_mail) do |params|
         params[:plain_body].should be_blank
         params[:html_body].should == '<html><body>Hello, world!</body></html>'
