@@ -7,16 +7,26 @@ The Mailer extension enables form mail on a page.
 This version adds support for a 'trapped' parameter to text fields and textareas. If it's present, a bot trap is added to the field. It works like this:
 
 * The field name is replaced with a random string.
+* An input is placed on the form with name and id based on the random string
+* Another input is added to the form with the real field name, but hidden from humans
 * A hidden field (since we can't get at the session) records the mapping from random field name to real field name
-* A dummy field is added to the form with the real field name, and hidden from humans with a style tag (which should really be less obvious)
 * If anything is entered into the dummy field, we invalidate the form (and put an error on 'fieldname_trap')
 * Before the rest of the validations, the real field names are restored
 
-This is sometimes called an inverse captcha. It works surprisingly well at screening out form bots. All you need to put in your form is this:
+This is sometimes called an inverse captcha. It works surprisingly well at screening out form bots. Put this in your form:
 
   <r:mailer:text name="email" required="true" trapped="true" />
+  
+And you'll get something like this:
 
-It works for text inputs and textareas. It ought to work for checkboxes and radio buttons too but I haven't tried it.
+  <input type="text" value="" id="pa83cyAoiGruh" name="mailer[pa83cyAoiGruh]" />
+  <input type="text" style="display: none" value="" id="email" name="mailer[email]" />
+  <input type="hidden" name="mailer[untrap][email]" value="pa83cyAoiGruh" />
+  <input type="hidden" name="mailer[required][email]" value="true" />
+  
+Note that the 'required' flag carries the real field name: that's because we check the trap and restore the correct field labels before any other validation happens.
+
+Traps can be set on text inputs and textareas. It ought to work for checkboxes and radio buttons too but I haven't tried it yet.
 
 There are tests for the new behaviour in mailer_tags_spec and mail_spec.
   
