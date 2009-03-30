@@ -4,15 +4,15 @@ The Mailer extension enables form mail on a page.
 
 == (Forked)
 
-This version adds support for a 'trapped' parameter to text and other form fields. If present, the field is turned into an inverse captcha. It works like this:
+This version adds support for a 'trapped' parameter to text fields and textareas. If it's present, a bot trap is added to the field. It works like this:
 
 * The field name is replaced with a random string.
-* A hidden field (since we can't get at the session) records the mapping from random string to field name
-* A dummy field is added to the form with the real field name, and hidden with css
-* If anything is entered into the dummy field, we invalidate the form (with an error on 'fieldname_trap')
+* A hidden field (since we can't get at the session) records the mapping from random field name to real field name
+* A dummy field is added to the form with the real field name, and hidden from humans with a style tag (which should really be less obvious)
+* If anything is entered into the dummy field, we invalidate the form (and put an error on 'fieldname_trap')
 * Before the rest of the validations, the real field names are restored
 
-This is sometimes called an inverse captcha. It works surprisingly well at screening out form bots. All you need to put in your form is something like this:
+This is sometimes called an inverse captcha. It works surprisingly well at screening out form bots. All you need to put in your form is this:
 
   <r:mailer:text name="email" required="true" trapped="true" />
 
@@ -20,7 +20,7 @@ It works for text inputs and textareas. It ought to work for checkboxes and radi
 
 There are tests for the new behaviour in mailer_tags_spec and mail_spec.
   
-== Other Fixes
+=== (Other Fixes)
 
 * changed spec/dataset to spec/datasets since that's what spec_helper is looking for
 * changed datasets/mailer to datasets/mailer_pages because rspec was finding Mailer before it found MailerDataset
