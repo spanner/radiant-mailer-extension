@@ -235,6 +235,14 @@ describe "MailerTags" do
     it "should add a 'required' hidden field when the required attribute is specified" do
       pages(:mail_form).should render("<r:mailer:textarea name='body' required='true'/>").as(%Q{<textarea id="body" rows="5" cols="35" name="mailer[body]"></textarea><input type="hidden" name="mailer[required][body]" value="true" />})
     end
+
+    it "should include a gibberish field and hidden untrap-mapping field when the 'trapped' attribute is specified" do
+      pages(:mail_form).should render("<r:mailer:textarea name='body' trapped='true' trap_name='testing' />").as(%Q{<textarea id="testing" rows="5" cols="35" name="mailer[testing]"></textarea><textarea style="display: none" id="body" name="mailer[body]"></textarea><input type="hidden" name="mailer[untrap][body]" value="testing" />})
+    end
+
+    it "should include a gibberish field and untrap and required hidden fields when both the 'trapped' and 'required' attributes are specified" do
+      pages(:mail_form).should render("<r:mailer:textarea name='body' trapped='true' trap_name='testing' required='true' />").as(%Q{<textarea id="testing" rows="5" cols="35" name="mailer[testing]"></textarea><textarea style="display: none" id="body" name="mailer[body]"></textarea><input type="hidden" name="mailer[untrap][body]" value="testing" /><input type="hidden" name="mailer[required][body]" value="true" />})
+    end
   end
   
   describe "<r:mailer:radiogroup>" do

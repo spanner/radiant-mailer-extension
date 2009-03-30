@@ -115,7 +115,7 @@ module MailerTags
         tag.attr['name'] = tag.attr['trap_name'] || prior_field_name(tag) || generate_random_name
       end
       results << [%(<input type="#{type}" value="#{value}" #{mailer_attrs(tag)} />)]
-      if tag.attr['trapped']
+      if tag.attr['real_name']
         results << %{<input type="#{type}" style="display: none" value="" id="#{tag.attr['real_name']}" name="mailer[#{tag.attr['real_name']}]" />}
         results << %{<input type="hidden" name="mailer[untrap][#{tag.attr['real_name']}]" value="#{tag.attr['name']}" />}
         tag.attr['name'] = tag.attr['real_name']    # so that the required field, if any, has the real not the fake field name (requirement validation happens after we've translated the field names back)
@@ -141,10 +141,20 @@ module MailerTags
     Renders a <textarea>...</textarea> tag for a mailer form. The 'name' attribute is required. }
   tag 'mailer:textarea' do |tag|
     raise_error_if_name_missing "mailer:textarea", tag.attr
-    result =  [%(<textarea #{mailer_attrs(tag, 'rows' => '5', 'cols' => '35')}>)]
-    result << (prior_value(tag) || tag.expand)
-    result << "</textarea>"
-    add_required(result, tag)
+    results = []
+    if tag.attr['trapped']
+      tag.attr['real_name'] = tag.attr['name']
+      tag.attr['name'] = tag.attr['trap_name'] || prior_field_name(tag) || generate_random_name
+    end
+    results =  [%(<textarea #{mailer_attrs(tag, 'rows' => '5', 'cols' => '35')}>)]
+    results << (prior_value(tag) || tag.expand)
+    results << "</textarea>"
+    if tag.attr['real_name']
+      results << %{<textarea style="display: none" id="#{tag.attr['real_name']}" name="mailer[#{tag.attr['real_name']}]"></textarea>}
+      results << %{<input type="hidden" name="mailer[untrap][#{tag.attr['real_name']}]" value="#{tag.attr['name']}" />}
+      tag.attr['name'] = tag.attr['real_name']    # so that the required field, if any, has the real not the fake field name (requirement validation happens after we've translated the field names back)
+    end
+    add_required(results, tag)
   end
 
   desc %{
