@@ -4,7 +4,7 @@ The Mailer extension enables form mail on a page.
 
 == (Forked)
 
-This version adds support for a 'trapped' parameter to text fields and textareas. If it's present, a bot trap is added to the field. It works like this:
+This version adds support for a 'trapped' parameter to text fields and textareas. If it's present, a bot trap is put in front of the field. It works like this:
 
 * The field name is replaced with a random string.
 * An input is placed on the form with name and id based on the random string
@@ -29,8 +29,13 @@ Note that the 'required' flag carries the real field name: that's because we che
 Traps can be set on text inputs and textareas. It ought to work for checkboxes and radio buttons too but I haven't tried it yet.
 
 There are tests for the new behaviour in mailer_tags_spec and mail_spec.
-  
-=== (Other Fixes)
+
+=== (minor issues)
+
+* You can't label the trapped field properly because it has a random name. If that bothers you, you can also pass through a 'trap_name' parameter, but beware: if you label your random field 'email' it is easier to spot.
+* The concealment possible here is quite shallow. The trap field should really be hidden in a less detectable way - using javascript after the page has loaded, say - and the untrap mapping should be carried through another channel (eg in the session). We can't do that because radius tags are defined in a model and have no access to the world. Suggestions would be very welcome.
+
+=== (other fixes)
 
 * changed spec/dataset to spec/datasets since that's what spec_helper is looking for
 * changed datasets/mailer to datasets/mailer_pages because rspec was finding Mailer before it found MailerDataset
