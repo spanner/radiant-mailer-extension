@@ -15,7 +15,9 @@ This version adds support for a 'trapped' parameter to text and other form field
 This is sometimes called an inverse captcha. It works surprisingly well at screening out form bots. All you need to put in your form is something like this:
 
   <r:mailer:text name="email" required="true" trapped="true" />
-  
+
+It works for text inputs and textareas. It ought to work for checkboxes and radio buttons too but I haven't tried it.
+
 There are tests for the new behaviour in mailer_tags_spec and mail_spec.
   
 == Other Fixes
